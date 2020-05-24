@@ -1,27 +1,29 @@
 // sobre memoria a largo plazo:
 // https://sci2s.ugr.es/sites/default/files/files/Teaching/GraduatesCourses/Algoritmica/Tema04-BusquedaTabu-12-13.pdf
 
+const TEST = true;
 
-placesTest = [{name: "Madrid", lat: 40.4167754, lng: -3.7037902},
-{name: "Toledo", lat: 39.86283160000001, lng: -4.0273231},
-{name: "Segovia", lat: 40.9429032, lng: -4.1088069},
-{name: "Valencia", lat: 39.4699075, lng: -0.3762881},
-{name: "Bilbao", lat: 43.2630126, lng: -2.9349852},
-{name: "Cuenca", lat: 40.0703925, lng: -2.1374162},
-{name: "Barcelona", lat: 41.38506389999999, lng: 2.1734035},
-{name: "Badajoz", lat: 38.87944950000001, lng: -6.9706535},
-{name: "Málaga", lat: 36.721261, lng: -4.4212655},
-{name: "Murcia", lat: 37.99223990000001, lng: -1.1306544},
-{name: "Santander", lat: 43.46230569999999, lng: -3.8099803},
-{name: "Sevilla", lat: 37.3890924, lng: -5.9844589},
-{name: "Málaga", lat: 36.721261, lng: -4.4212655},
-{name: "Huelva", lat: 37.261421, lng: -6.9447224},
-{name: "Valladolid", lat: 41.652251, lng: -4.724532099999998},
-{name: "León", lat: 42.5987263, lng: -5.5670959},
-{name: "Oviedo", lat: 43.3619145, lng: -5.8493887},
-{name: "Salamanca", lat: 40.9701039, lng: -5.6635397},
-{name: "Santiago de Compostela", lat: 42.8782132, lng: -8.544844500000002}];
-
+placesTest = [
+{name: "Madrid", lat: 40.4167754, lng: -3.7037902, id: 0},
+{name: "Toledo", lat: 39.86283160000001, lng: -4.0273231, id: 1},
+{name: "Segovia", lat: 40.9429032, lng: -4.1088069, id: 2},
+{name: "Valencia", lat: 39.4699075, lng: -0.3762881, id: 3},
+{name: "Bilbao", lat: 43.2630126, lng: -2.9349852, id: 4},
+{name: "Cuenca", lat: 40.0703925, lng: -2.1374162, id: 5},
+{name: "Barcelona", lat: 41.38506389999999, lng: 2.1734035, id: 6},
+{name: "Badajoz", lat: 38.87944950000001, lng: -6.9706535, id: 7},
+{name: "Málaga", lat: 36.721261, lng: -4.4212655, id: 8},
+{name: "Murcia", lat: 37.99223990000001, lng: -1.1306544, id: 9},
+{name: "Santander", lat: 43.46230569999999, lng: -3.8099803, id: 10},
+{name: "Sevilla", lat: 37.3890924, lng: -5.9844589, id: 11},
+{name: "Málaga", lat: 36.721261, lng: -4.4212655, id: 12},
+{name: "Huelva", lat: 37.261421, lng: -6.9447224, id: 13},
+{name: "Valladolid", lat: 41.652251, lng: -4.724532099999998, id: 14},
+{name: "León", lat: 42.5987263, lng: -5.5670959, id: 15},
+{name: "Oviedo", lat: 43.3619145, lng: -5.8493887, id: 16},
+{name: "Salamanca", lat: 40.9701039, lng: -5.6635397, id: 17},
+{name: "Santiago de Compostela", lat: 42.8782132, lng: -8.544844500000002, id: 18}
+];
 
 Array.prototype.swap = function (x, y) {
 	var array = this.slice();
@@ -49,31 +51,87 @@ function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
 	return d;
 }
 
+class Solution {
+	constructor(places=[], color="#888888") {
+		this.places = places;		// Listado de lugares
+		this.color = color;			// Color para dibujar la ruta
+		this.distance = null;		// coste asociado a la ruta (distancia total)
+	}
+	swap (x, y) {
+		var places = this.places.swap(x, y);
+		return new Solution(places);
+	}
+	updateDistancesArray () {
+		if (Solution.distancesArray) {
+			delete (Solution.distancesArray);
+		}
+		var array = {};
+		var places = this.places;
+		places.forEach(function(p1) {
+			array[p1.name] = {};
+			places.forEach(function(p2) {
+				array[p1.name][p2.name] = (p1.name == p2.name) ? 0 : getDistanceFromLatLonInKm(
+					p1.lat, p1.lng, p2.lat, p2.lng);
+			})
+		});
+		console.log("Matriz de distancias calculada: ");
+		console.log(JSON.stringify(array, null, 4));
+		Solution.distancesArray = array; 
+		return array;
+	}
+
+	getDistance () {
+		if (this.distance == null) {
+			// Calcula la distancia total para un recorrido dado
+			var places = this.places;
+			if (places.length < 2) {
+				this.distance = 0;	
+			} else {
+				if (typeof (Solution.distancesArray) == "undefined") {
+					this.updateDistancesArray();
+				}
+				var array = Solution.distancesArray;
+				var c = 0;
+				function dist(a, b) {
+					// cálculo de la distancia entre dos puntos
+					return array[a.name][b.name];
+				}
+				for (var i=0; i<places.length-1; i++) {
+					c += dist(places[i], places[i+1]);
+				}
+				c += dist(places[0], places[places.length - 1]);
+				this.distance = c;
+			}
+		}
+		return this.distance;
+	}
+	addPlace(place) {
+		this.places.push(place);
+		place.id = this.places.length-1;
+		this.distance = null;
+		delete(Solution.distancesArray);
+	}
+}
+
+class Candidate extends Solution {
+	// Esta clase almacena información de candidatos de prueba 
+	// generados con búsqueda tabú
+	constructor(solution, x, y) {
+		// solution es la solución a a partir de la que se genera el candidato
+		// x, y son las posiciones que se intercambian
+		super(solution.places.swap(x, y));
+		this.swapInfo = [this.places[x].name, this.places[y].name].sort().join("-");
+	}
+}
+
 var map;
-var places = [];		// Lista de lugares a visitar
-var bestPlaces = [];	// Mejor recorrido encontrado
-var places = placesTest;
-var route = null;		// la ruta dibujada (polígono)
-var bestRoute = null;	// La mejor ruta encontrada
-var timer = null;
+var currentSolution = new Solution(TEST ? placesTest : [], "#00FF00");
+var bestSolution = new Solution(TEST ? placesTest : [], "#FF0000");
+
+var timer = null;		// El timer global para hacer iteraciones
 var graph_data = [];
 var chart = null;
-var nIter = 0;
-var distancesArray = null;
-
-function computeDistancesArray(places) {
-	var array = {};
-	places.forEach(function(p1) {
-		array[p1.name] = {};
-		places.forEach(function(p2) {
-			array[p1.name][p2.name] = (p1.name == p2.name) ? 0 : getDistanceFromLatLonInKm(
-				p1.lat, p1.lng, p2.lat, p2.lng);
-		})
-	});
-	console.log("Matriz de distancias calculada: ");
-	console.log(JSON.stringify(array, null, 4));
-	return array;
-}
+var nIter = 0;			// El número de iteración actual
 
 function randomInt(i) {
 	return Math.floor(Math.random() * i);
@@ -82,112 +140,128 @@ function randomInt(i) {
 function reset() {
 	graph_data = [];
 	nIter = 0;
-	distancesArray = computeDistancesArray(places);
 }
 
+
+var currentRoute;
+var bestRoute;
 function initMap() {
+	// INicializa el map con la API de Google Maps
 	map = new google.maps.Map(document.getElementById("map"), {
-  	// centramos en madrid
-  	center: { lat: 40.416775, lng: -3.703790 },
-  	zoom: 6
-  });
-}
-
-function drawRoute(p, color) {
-	if (route) {
-		route.setMap(null);
-	}
-	route = new google.maps.Polygon({
-		paths: p,
-		strokeColor: color,
+  		// centramos en madrid
+  		center: { lat: 40.416775, lng: -3.703790 },
+  		zoom: 6
+  	});
+	currentRoute = new google.maps.Polygon({
+		paths: [],
+		strokeColor: "#00FF00",
 		strokeOpacity: 1,
 		strokeWeight: 2
 	});
-	route.setMap(map);
+	currentRoute.setMap(map);
+	bestRoute = new google.maps.Polygon({
+		paths: [],
+		strokeColor: "#FF0000",
+		strokeOpacity: 1,
+		strokeWeight: 2
+	});
+	bestRoute.setMap(map);
 }
 
-
-function tabuRun() {
-	tabu(true);
+function drawRoute(solution, type) {
+	if (type == "current") {
+		currentRoute.setPaths(solution.places);
+	} else if (type == "best") {
+		bestRoute.setPaths(solution.places);
+	}
 }
-function tabuStep() {
-	tabu(false);
-}
-var tabuMemory = {};
-/** Se comienza la optimización con búsqueda tabú **/
-function tabu(run) {
-	reset();
-	
-	var timeTabu = 3;
 
-	function updateTabuMemory() {
-		// actualización de la memoria tabu en cada iteración
-		for (m in tabuMemory) {
+class TabuMemory {
+	constructor() {
+		this.memory = {};
+	}
+	update(key, time) {
+		var tabuMemory = this.memory;
+		for (var m in tabuMemory) {
 			tabuMemory[m] = Math.max(tabuMemory[m]-1, 0);
 		}
-	};
+		tabuMemory[key] = time;
+	}
+	isTabu(key) {
+		return this.memory[key];
+	}
+}
+var tabuMemory = new TabuMemory();
 
-	function cost(x) {
-		// Calcula la distancia total para un recorrido dado
-		if (x.length < 2) return 0;
-		var c = 0;
-		function dist(a, b) {
-			// cálculo de la distancia entre dos puntos
-			// var dlat = a.lat - b.lat;
-			// var dlng = a.lng - b.lng;
-			// return Math.sqrt(dlat*dlat + dlng*dlng);
-			return distancesArray[a.name][b.name];
-		}
-		for (var i=0; i<x.length-1; i++) {
-			c += dist(x[i], x[i+1]);
-		}
-		c += dist(x[0], x[x.length - 1]);
-		return c;
+/** Se comienza la optimización con búsqueda tabú **/
+class TabuSearch {
+	constructor(timeTabu=3, aspiration=true, randomize=true) {
+		this.config(timeTabu, aspiration, randomize);
+		reset();
 	}
 
-	function generateCandidates(x) {
-		// esta función genera la lista de candidatos aleatorios
+	config(timeTabu=3, aspiration=true, randomize=true) {
+		this.timeTabu = timeTabu;
+		this.aspiration = aspiration;
+		this.randomize = randomize;
+	}
+
+	generateCandidates(solution) {
+		// esta función genera la lista de candidatos en cada iteración
 		var candidates = [];
-		for (var i = 1; i < x.length; i++) {
-			var swap = [i, i-1].join(",");
-			var candidate = x.swap(i, i-1);
-			candidates.push({
-				"candidate": candidate,
-				"swap": swap
-			});
+		for (var i = 1; i < solution.places.length; i++) {
+			candidates.push(new Candidate(solution, i-1, i));
 		}
-		return candidates;
+		if (this.randomize) {
+			console.log("**********************************");
+			console.log("Generando un candidato aleatorio: ");
+			console.log("**********************************");
+			//Generamos un individuo intercambiando dos ciudades de manera aleatoria.
+			var i = randomInt(currentSolution.places.length-1);
+			var j = randomInt(currentSolution.places.length-1);
+			var randomCandidate = new Candidate(currentSolution, i, j);
+			randomCandidate.isRandom = true;
+			candidates.push(randomCandidate);
+		}		
+		return candidates.sort(function(a, b) {
+			// los ordenamos de menor a mayor distancia total
+			return (a.getDistance() < b.getDistance()) ? -1 : 1;
+		});
 	}
 
-	function tabuIteration() {
+	tabuIteration() {
 		nIter += 1;
-		var dActual = cost(places);
+		var places = currentSolution.places;
+		console.log("===========================================");
 		console.log("Iteración: " + nIter);
 		console.log("Ruta actual: ");
 		console.log(places.map(function(x){return x.name}));
-		console.log("Distancia actual: " + dActual);
-		var candidates = generateCandidates(places);
-		candidates.forEach(function(c) {
-			// calculamos la distancia total para cada candidato:
-			c["cost"] = cost(c["candidate"]);
-		});
-		candidates.sort(function(a, b) {
-			// los ordenamos de menor a mayor
-			return (a["cost"] < b["cost"]) ? -1 : 1;
-		})
+		console.log("Distancia actual: " + currentSolution.getDistance());
+		console.log("Mejor distancia: " + bestSolution.getDistance());
+		var candidates = this.generateCandidates(currentSolution);
+		
 		console.log(candidates);
 		var chosen = null;
 		for (var i=0; i<candidates.length; i++) {
 			var c = candidates[i];
-			var swap = c["swap"];
-			if (tabuMemory[swap]) continue;
+			if (tabuMemory.isTabu(c.swapInfo)) {
+				// El movimiento está en la lista tabú
+				if (this.aspiration) {
+					// Comprobamos si se cumple el criterio de aspiración
+					if (c.getDistance() >= bestSolution.getDistance()) {
+						continue;
+					} else {
+						console.log("*****************************************")
+						console.log("Se ha cumplido un criterio de aspiración.")
+					}
+				}
+			} 
 			chosen = c;
 			break;
 		};
 		if (chosen) {
-			updateTabuMemory();
-			tabuMemory[c["swap"]] = timeTabu;
-			places = c["candidate"];
+			tabuMemory.update(chosen.swapInfo, this.timeTabu)
+			currentSolution = chosen;
 
 		} else {
 			console.log("Se ha terminado la optimización");
@@ -195,17 +269,14 @@ function tabu(run) {
 		};
 		console.log(tabuMemory);
 		// drawRoute(candidates[randomInt(5)]);
-		drawRoute(places, "#00FF00");
-		drawRoute(bestPlaces, "#FF0000");
-		
-	}
-	if (run) {
-		timer = setInterval(tabuIteration, 100);
-	} else {
-		tabuIteration();
-	}
-	
-}
+
+		if (currentSolution.getDistance() < bestSolution.getDistance()) {
+			bestSolution = currentSolution;
+		}
+	};
+};
+
+var tabuSearch = new TabuSearch();
 
 /** Se detiene el proceso de optimización **/
 function stop() {
@@ -222,6 +293,12 @@ $(function() {
 		};
 		return place;
 	};
+
+	function updateUI() {
+		// esta función sirve para actualizar la interfaz de usuario en cada iteración
+		drawRoute(currentSolution, "current");
+		drawRoute(bestSolution, "best");
+	};
 	var input = document.getElementById('search');
 	var autocomplete = new google.maps.places.Autocomplete(input);
 
@@ -234,14 +311,26 @@ $(function() {
 
 	$("#add").click(function() {
 		$("#places_list").append("<li>" + $("#place").text() + "</li>");
-		places.push(getPlace());
-		console.log(places);
+		currentSolution.addPlace(getPlace());
+		bestSolution = currentSolution;
+		console.log(currentSolution);
 		$("#search").val("");
-		drawRoute(places);
-		distancesArray = computeDistancesArray(places);
+		drawRoute(currentSolution, "current");
 	});
-	$("#tabu").click(tabuRun);
-	$("#tabu_step").click(tabuStep);
+	$("#tabu").click(function() {
+		var time = parseInt($("#tabu_time").val()) || 3;
+		tabuSearch.config(time);
+		timer = setInterval(function() {
+			tabuSearch.tabuIteration();
+			updateUI();
+		}, 100);
+	});
+	$("#tabu_step").click(function() {
+		var time = parseInt($("#tabu_time").val()) || 3;
+		tabuSearch.config(time);
+		tabuSearch.tabuIteration();
+		updateUI();
+	});
 	$("#stop").click(stop);
 	// var ctx = document.getElementById("chart").getContext("2d");
 	// chart = new Chart(ctx, {

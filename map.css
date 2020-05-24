@@ -27,6 +27,14 @@ element that contains the map. */
 	border-style: solid;
 }
 
+#places_list li {
+	background-color: #00a0f2;
+	color: white;
+	padding: 2px;
+	margin-bottom: 2px;
+	border-radius: 3px;
+}
+
 /* Optional: Makes the sample page fill the window. */
 html,
 body {
