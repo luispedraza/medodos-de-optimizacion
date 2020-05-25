@@ -9,6 +9,7 @@
 	src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD0cWLIp3sWucdhTFKOAD4eTn8fVLT_7jg&callback=initMap&libraries=places&v=weekly"
 	defer
 	></script>
+	<link href="https://fonts.googleapis.com/css2?family=Rambla:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
 	<link rel="stylesheet" type="text/css" href="./reset.css" />
 	<link rel="stylesheet" type="text/css" href="./map.css" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css" />
@@ -18,7 +19,7 @@
 	<div id="control">
 		<h1>Ejemplo de algorimtos de optimización</h1>
 		<div>
-			<h2>agrega lugares</h2>
+			<h2>Agrega lugares</h2>
 			<input id="search" type="text" >
 		</div>
 		<div>Coordenadas de <label id="place"></label></div>
@@ -28,15 +29,21 @@
 		<div>
 			<label>Longitud: </label><label id="lon"></label>
 		</div>
-		<button id="add">AÑADIR ESTA CIUDAD</button>
+		<button id="add" class="button">AÑADIR ESTA CIUDAD</button>
 		<ul id="places_list">
 			
 		</ul>
+		<button id="save" class="button">GUARDAR ESTA LISTA</button>
+		<input type="file" id="load" accept=".json">
+		<label for="load" class="button">CARGA UNA LISTA GUARDADA</label>
+
+
 		<div id = "tabu_search">
 			<label> Tiempo tabú: <input id="tabu_time"></input></label>
 			<button id="tabu">BÚSQUEDA TABÚ</button>
 			<button id="tabu_step">STEP</button>
 		</div>
+		<button id="nearest">VECINO MÁS CERCANO</button>
 		
 		<button id="stop">DETENER LA OPTIMIZACIÓN</button>
 		<canvas id="chart"></canvas>

@@ -1,7 +1,7 @@
 // sobre memoria a largo plazo:
 // https://sci2s.ugr.es/sites/default/files/files/Teaching/GraduatesCourses/Algoritmica/Tema04-BusquedaTabu-12-13.pdf
 
-const TEST = true;
+const TEST = false;
 
 placesTest = [
 {name: "Madrid", lat: 40.4167754, lng: -3.7037902, id: 0},
@@ -33,6 +33,10 @@ Array.prototype.swap = function (x, y) {
 	return array;
 }
 
+Array.prototype.last = function() {
+	return this[this.length-1];
+}
+
 function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
 	// Haversine formula
 	// https://stackoverflow.com/questions/27928/calculate-distance-between-two-latitude-longitude-points-haversine-formula
@@ -52,14 +56,20 @@ function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
 }
 
 class Solution {
-	constructor(places=[], color="#888888") {
+	constructor(places=[]) {
 		this.places = places;		// Listado de lugares
-		this.color = color;			// Color para dibujar la ruta
 		this.distance = null;		// coste asociado a la ruta (distancia total)
+		this.length = places.length;
 	}
 	swap (x, y) {
 		var places = this.places.swap(x, y);
 		return new Solution(places);
+	}
+	getPlace(i) {
+		return this.places[i];
+	}
+	getPlacesNames() {
+		return this.places.map(function(x){return x.name}).join(" => ");
 	}
 	updateDistancesArray () {
 		if (Solution.distancesArray) {
@@ -76,11 +86,14 @@ class Solution {
 		});
 		console.log("Matriz de distancias calculada: ");
 		console.log(JSON.stringify(array, null, 4));
-		Solution.distancesArray = array; 
+		Solution.distancesArray = array;
 		return array;
 	}
+	getDistance(a, b) {
+		return Solution.distancesArray[a.name][b.name];
+	} 
 
-	getDistance () {
+	getTotalDistance () {
 		if (this.distance == null) {
 			// Calcula la distancia total para un recorrido dado
 			var places = this.places;
@@ -90,16 +103,11 @@ class Solution {
 				if (typeof (Solution.distancesArray) == "undefined") {
 					this.updateDistancesArray();
 				}
-				var array = Solution.distancesArray;
 				var c = 0;
-				function dist(a, b) {
-					// cálculo de la distancia entre dos puntos
-					return array[a.name][b.name];
-				}
 				for (var i=0; i<places.length-1; i++) {
-					c += dist(places[i], places[i+1]);
+					c += this.getDistance(places[i], places[i+1]);
 				}
-				c += dist(places[0], places[places.length - 1]);
+				c += this.getDistance(places[0], places[places.length - 1]);
 				this.distance = c;
 			}
 		}
@@ -109,6 +117,7 @@ class Solution {
 		this.places.push(place);
 		place.id = this.places.length-1;
 		this.distance = null;
+		this.length = places.length;
 		delete(Solution.distancesArray);
 	}
 }
@@ -225,7 +234,7 @@ class TabuSearch {
 		}		
 		return candidates.sort(function(a, b) {
 			// los ordenamos de menor a mayor distancia total
-			return (a.getDistance() < b.getDistance()) ? -1 : 1;
+			return (a.getTotalDistance() < b.getTotalDistance()) ? -1 : 1;
 		});
 	}
 
@@ -235,9 +244,9 @@ class TabuSearch {
 		console.log("===========================================");
 		console.log("Iteración: " + nIter);
 		console.log("Ruta actual: ");
-		console.log(places.map(function(x){return x.name}));
-		console.log("Distancia actual: " + currentSolution.getDistance());
-		console.log("Mejor distancia: " + bestSolution.getDistance());
+		console.log(currentSolution.getPlacesNames());
+		console.log("Distancia actual: " + currentSolution.getTotalDistance());
+		console.log("Mejor distancia: " + bestSolution.getTotalDistance());
 		var candidates = this.generateCandidates(currentSolution);
 		
 		console.log(candidates);
@@ -248,7 +257,7 @@ class TabuSearch {
 				// El movimiento está en la lista tabú
 				if (this.aspiration) {
 					// Comprobamos si se cumple el criterio de aspiración
-					if (c.getDistance() >= bestSolution.getDistance()) {
+					if (c.getTotalDistance() >= bestSolution.getTotalDistance()) {
 						continue;
 					} else {
 						console.log("*****************************************")
@@ -270,11 +279,37 @@ class TabuSearch {
 		console.log(tabuMemory);
 		// drawRoute(candidates[randomInt(5)]);
 
-		if (currentSolution.getDistance() < bestSolution.getDistance()) {
+		if (currentSolution.getTotalDistance() < bestSolution.getTotalDistance()) {
 			bestSolution = currentSolution;
 		}
 	};
 };
+
+/** Heurística sencilla del veino más próximo 
+	selecciona como primer vértice uno aleatorio **/
+function nearestNeighbour(solution) {
+	console.log("****** Heurística del vecino más próximo ******");
+	console.log("Distancia actual: " + solution.getTotalDistance());
+	var initPosition = randomInt(solution.length-1);
+	var places = solution.places.slice();	// copiamos la lista de lugares
+	var newPlaces = places.splice(initPosition,1);
+	console.log("Comenzando por el lugar: " + newPlaces[0].name);
+	while (places.length) {
+		var last = newPlaces.last();
+		places = places.map(function(p) {
+			p["dtemp"] = solution.getDistance(last, p);
+			return p;
+		});
+		newPlaces.push(places.sort(function(a, b) {
+			return (a.dtemp < b.dtemp) ? -1 : 1;
+		})[0]);
+		places.splice(0,1);
+	}
+	var newSolution = new Solution(newPlaces);
+	console.log("Nueva distancia: " + newSolution.getTotalDistance());
+	console.log(newSolution.getPlacesNames());
+	return newSolution;
+}
 
 var tabuSearch = new TabuSearch();
 
@@ -299,6 +334,15 @@ $(function() {
 		drawRoute(currentSolution, "current");
 		drawRoute(bestSolution, "best");
 	};
+	function saveAs(content, fileName, contentType) {
+		// https://stackoverflow.com/questions/34156282/how-do-i-save-json-to-local-text-file
+		var a = document.createElement("a");
+		var file = new Blob([content], {type: contentType});
+		a.href = URL.createObjectURL(file);
+		a.download = fileName;
+		a.click();
+	}
+	
 	var input = document.getElementById('search');
 	var autocomplete = new google.maps.places.Autocomplete(input);
 
@@ -306,7 +350,7 @@ $(function() {
 		var place = getPlace();
 		document.getElementById('place').innerText = place.name;
 		document.getElementById('lat').innerText = place.lat;
-		document.getElementById('lon').innerText = place.lon;
+		document.getElementById('lon').innerText = place.lng;
 	});
 
 	$("#add").click(function() {
@@ -314,9 +358,28 @@ $(function() {
 		currentSolution.addPlace(getPlace());
 		bestSolution = currentSolution;
 		console.log(currentSolution);
-		$("#search").val("");
+		$("#search").val("");	// limpieza del cuadro de búsqueda
 		drawRoute(currentSolution, "current");
 	});
+	$("#save").click(function() {
+		// saveAs(jsonData, 'json.txt', 'text/plain');
+		saveAs(JSON.stringify(currentSolution.places),
+			'data.json',
+			'application/json');
+	});
+	$("#load").change(function(e) {
+		var reader = new FileReader();
+		reader.onload = function(e) {
+			var jsonObj = JSON.parse(event.target.result);
+			console.log("Se ha cargado la siguiente lista de ubicaciones:");
+			console.log(jsonObj);
+			delete (currentSolution);
+			delete (bestSolution);
+			bestSolution = currentSolution = new Solution(jsonObj);
+			drawRoute(currentSolution, "current");
+		};
+		reader.readAsText(e.target.files[0]);
+	})
 	$("#tabu").click(function() {
 		var time = parseInt($("#tabu_time").val()) || 3;
 		tabuSearch.config(time);
@@ -329,6 +392,9 @@ $(function() {
 		var time = parseInt($("#tabu_time").val()) || 3;
 		tabuSearch.config(time);
 		tabuSearch.tabuIteration();
+		updateUI();
+	});$("#nearest").click(function() {
+		bestSolution = currentSolution = nearestNeighbour(currentSolution);
 		updateUI();
 	});
 	$("#stop").click(stop);
