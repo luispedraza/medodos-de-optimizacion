@@ -33,9 +33,7 @@ Array.prototype.swap = function (x, y) {
 	return array;
 }
 
-Array.prototype.last = function() {
-	return this[this.length-1];
-}
+Array.prototype.last = function() { return this[this.length-1]; }
 
 function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
 	// Haversine formula
@@ -201,27 +199,42 @@ function drawMarkers(solution) {
 	});
 }
 
-class TabuMemory {
+/** Clase general de memoria para búsqueda tabú **/
+class Memory {
 	constructor() {
 		this.memory = {};
 	}
+}
+/** Clase para memoria a corto plazo **/
+class TabuMemory extends Memory {
 	update(key, time) {
-		var tabuMemory = this.memory;
-		for (var m in tabuMemory) {
-			tabuMemory[m] = Math.max(tabuMemory[m]-1, 0);
+		var mem = this.memory;
+		for (var m in mem) {
+			mem[m] = Math.max(mem[m]-1, 0);
 		}
-		tabuMemory[key] = time;
+		mem[key] = time;
 	}
 	isTabu(key) {
 		return this.memory[key];
 	}
 }
-var tabuMemory = new TabuMemory();
+/** Clase para memoria a largo plazo **/
+class LongTermMemory {
+	update(key) {
+		if (this.memory[key]) {
+			this.memory[key] += 1;
+		} else {
+			this.memory[key] = 1;
+		}
+ 	}
+}
 
 /** Se comienza la optimización con búsqueda tabú **/
 class TabuSearch {
 	constructor(timeTabu=3, aspiration=true, randomize=true) {
 		this.config(timeTabu, aspiration, randomize);
+		this.tabuMemory = new TabuMemory();
+		this.ltMemory = new LongTermMemory();
 		reset();
 	}
 
@@ -269,7 +282,7 @@ class TabuSearch {
 		var chosen = null;
 		for (var i=0; i<candidates.length; i++) {
 			var c = candidates[i];
-			if (tabuMemory.isTabu(c.swapInfo)) {
+			if (this.tabuMemory.isTabu(c.swapInfo)) {
 				// El movimiento está en la lista tabú
 				if (this.aspiration) {
 					// Comprobamos si se cumple el criterio de aspiración
@@ -285,14 +298,14 @@ class TabuSearch {
 			break;
 		};
 		if (chosen) {
-			tabuMemory.update(chosen.swapInfo, this.timeTabu)
+			this.tabuMemory.update(chosen.swapInfo, this.timeTabu)
 			currentSolution = chosen;
 
 		} else {
 			console.log("Se ha terminado la optimización");
 			stop();
 		};
-		console.log(tabuMemory);
+		console.log(this.tabuMemory);
 		// drawRoute(candidates[randomInt(5)]);
 
 		if (currentSolution.getTotalDistance() < bestSolution.getTotalDistance()) {
