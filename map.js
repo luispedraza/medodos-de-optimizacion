@@ -117,7 +117,7 @@ class Solution {
 		this.places.push(place);
 		place.id = this.places.length-1;
 		this.distance = null;
-		this.length = places.length;
+		this.length = this.places.length;
 		delete(Solution.distancesArray);
 	}
 }
@@ -222,12 +222,12 @@ class TabuSearch {
 			candidates.push(new Candidate(solution, i-1, i));
 		}
 		if (this.randomize) {
-			console.log("**********************************");
-			console.log("Generando un candidato aleatorio: ");
-			console.log("**********************************");
 			//Generamos un individuo intercambiando dos ciudades de manera aleatoria.
 			var i = randomInt(currentSolution.places.length-1);
 			var j = randomInt(currentSolution.places.length-1);
+			console.log("===> Generando un candidato aletario. Intercambio: ", 
+				currentSolution.getPlace(i).name,
+				currentSolution.getPlace(j).name);
 			var randomCandidate = new Candidate(currentSolution, i, j);
 			randomCandidate.isRandom = true;
 			candidates.push(randomCandidate);

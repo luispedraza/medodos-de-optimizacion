@@ -3,8 +3,11 @@
 <head>
 	<title>Simple Map</title>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.js"></script>
-	<script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+
+
+	<link rel="stylesheet" href="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+    <script src="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
+
 	<script
 	src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD0cWLIp3sWucdhTFKOAD4eTn8fVLT_7jg&callback=initMap&libraries=places&v=weekly"
 	defer
@@ -40,12 +43,12 @@
 
 		<div id = "tabu_search">
 			<label> Tiempo tabú: <input id="tabu_time"></input></label>
-			<button id="tabu">BÚSQUEDA TABÚ</button>
-			<button id="tabu_step">STEP</button>
+			<button id="tabu" class="button optim ">BÚSQUEDA TABÚ</button>
+			<button id="tabu_step" class="button optim">STEP</button>
 		</div>
-		<button id="nearest">VECINO MÁS CERCANO</button>
+		<button id="nearest" class="button optim">VECINO MÁS CERCANO</button>
 		
-		<button id="stop">DETENER LA OPTIMIZACIÓN</button>
+		<button id="stop" class="button stop">DETENER LA OPTIMIZACIÓN</button>
 		<canvas id="chart"></canvas>
 	</div>
 	<div id="map"></div>
