@@ -154,6 +154,8 @@ function reset() {
 
 var currentRoute;
 var bestRoute;
+var markers = [];
+
 function initMap() {
 	// INicializa el map con la API de Google Maps
 	map = new google.maps.Map(document.getElementById("map"), {
@@ -183,6 +185,20 @@ function drawRoute(solution, type) {
 	} else if (type == "best") {
 		bestRoute.setPaths(solution.places);
 	}
+}
+function drawMarkers(solution) {
+	markers.forEach(function(m) {
+		m.setMap(null);
+		delete(m);
+	});
+	markers = [];
+	solution.places.forEach(function(p) {
+		markers.push(new google.maps.Marker({
+			position: p,
+			map: map,
+			title: p.name
+		}))
+	});
 }
 
 class TabuMemory {
@@ -286,7 +302,7 @@ class TabuSearch {
 };
 
 /** Heurística sencilla del veino más próximo 
-	selecciona como primer vértice uno aleatorio **/
+selecciona como primer vértice uno aleatorio **/
 function nearestNeighbour(solution) {
 	console.log("****** Heurística del vecino más próximo ******");
 	console.log("Distancia actual: " + solution.getTotalDistance());
@@ -333,6 +349,7 @@ $(function() {
 		// esta función sirve para actualizar la interfaz de usuario en cada iteración
 		drawRoute(currentSolution, "current");
 		drawRoute(bestSolution, "best");
+		drawMarkers(currentSolution);
 	};
 	function saveAs(content, fileName, contentType) {
 		// https://stackoverflow.com/questions/34156282/how-do-i-save-json-to-local-text-file
@@ -376,7 +393,7 @@ $(function() {
 			delete (currentSolution);
 			delete (bestSolution);
 			bestSolution = currentSolution = new Solution(jsonObj);
-			drawRoute(currentSolution, "current");
+			updateUI();
 		};
 		reader.readAsText(e.target.files[0]);
 	})
