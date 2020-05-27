@@ -219,13 +219,20 @@ class TabuMemory extends Memory {
 	}
 }
 /** Clase para memoria a largo plazo **/
-class LongTermMemory {
+class LongTermMemory extends Memory {
 	update(key) {
 		if (this.memory[key]) {
 			this.memory[key] += 1;
 		} else {
 			this.memory[key] = 1;
 		}
+ 	}
+ 	max() {
+ 		var m = 0;
+ 		for (var k in this.memory) {
+ 			m = (this.memory[k]>m) ? this.memory[k] : m;
+ 		}
+ 		return m;
  	}
 }
 
@@ -298,7 +305,8 @@ class TabuSearch {
 			break;
 		};
 		if (chosen) {
-			this.tabuMemory.update(chosen.swapInfo, this.timeTabu)
+			this.tabuMemory.update(chosen.swapInfo, this.timeTabu);
+			this.ltMemory.update(chosen.swapInfo);
 			currentSolution = chosen;
 
 		} else {
@@ -306,6 +314,8 @@ class TabuSearch {
 			stop();
 		};
 		console.log(this.tabuMemory);
+		console.log(this.ltMemory);
+		console.log(this.ltMemory.max());
 		// drawRoute(candidates[randomInt(5)]);
 
 		if (currentSolution.getTotalDistance() < bestSolution.getTotalDistance()) {
