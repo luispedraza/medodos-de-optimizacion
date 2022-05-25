@@ -33,8 +33,20 @@ Array.prototype.swap = function (x, y) {
 	return array;
 }
 
+/**
+ * Last element of an array
+ * @returns last element
+ */
 Array.prototype.last = function() { return this[this.length-1]; }
 
+/**
+ * Distance between two locations
+ * @param {*} lat1 
+ * @param {*} lon1 
+ * @param {*} lat2 
+ * @param {*} lon2 
+ * @returns 
+ */
 function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
 	// Haversine formula
 	// https://stackoverflow.com/questions/27928/calculate-distance-between-two-latitude-longitude-points-haversine-formula
@@ -55,13 +67,27 @@ function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
 
 class Solution {
 	constructor(places=[]) {
-		this.places = places;		// Listado de lugares
-		this.distance = null;		// coste asociado a la ruta (distancia total)
+		this.places = places;		// locations list
+		this.distance = null;		// total distance for this route
 		this.length = places.length;
 	}
 	swap (x, y) {
-		var places = this.places.swap(x, y);
-		return new Solution(places);
+		if (typeof(x) == "string") {
+			this.places.forEach(function(p, i) {
+				if (p.name == x) {
+					x = i;
+				}
+			});
+		}
+		if (typeof(y) == "string") {
+			this.places.forEach(function(p, i) {
+				if (p.name == y) {
+					y = i;
+				}
+			});	
+		}
+		console.log("Intercambiando ", x, y);
+		return new Solution(this.places.swap(x, y));
 	}
 	getPlace(i) {
 		return this.places[i];
@@ -184,6 +210,7 @@ function drawRoute(solution, type) {
 		bestRoute.setPaths(solution.places);
 	}
 }
+
 function drawMarkers(solution) {
 	markers.forEach(function(m) {
 		m.setMap(null);
@@ -191,11 +218,26 @@ function drawMarkers(solution) {
 	});
 	markers = [];
 	solution.places.forEach(function(p) {
-		markers.push(new google.maps.Marker({
+		var m = new google.maps.Marker({
 			position: p,
+			icon: {
+				url: "./img/blue-marker-64.png",
+				scaledSize: new google.maps.Size(30, 30)
+			},
 			map: map,
 			title: p.name
-		}))
+		});
+		m.addListener("click", function(e) {
+			if (this.selected) {
+				this.setIcon("./img/blue-marker-64.png");
+				this.selected = false;	
+			} else {
+				this.setIcon("./img/red-marker-64.png");
+				this.selected = true;
+			}
+			$(document).trigger("marker", this);
+		})
+		markers.push(m);
 	});
 }
 
@@ -226,14 +268,14 @@ class LongTermMemory extends Memory {
 		} else {
 			this.memory[key] = 1;
 		}
- 	}
- 	max() {
- 		var m = 0;
- 		for (var k in this.memory) {
- 			m = (this.memory[k]>m) ? this.memory[k] : m;
- 		}
- 		return m;
- 	}
+	}
+	max() {
+		var m = 0;
+		for (var k in this.memory) {
+			m = (this.memory[k]>m) ? this.memory[k] : m;
+		}
+		return m;
+	}
 }
 
 /** Se comienza la optimización con búsqueda tabú **/
@@ -350,7 +392,7 @@ function nearestNeighbour(solution) {
 	return newSolution;
 }
 
-var tabuSearch = new TabuSearch();
+let tabuSearch = new TabuSearch();
 
 /** Se detiene el proceso de optimización **/
 function stop() {
@@ -437,7 +479,24 @@ $(function() {
 		bestSolution = currentSolution = nearestNeighbour(currentSolution);
 		updateUI();
 	});
+	$("#manual").click(function() {
+		console.log("Seleccione dos lugares para intercambiar");
+		$(document).on("marker", function(e, param) {
+			console.log(param);
+			var selectedMarkers = markers.filter(function(m) {
+				return (m.selected);
+			});
+			console.log(selectedMarkers);
+			if (selectedMarkers.length == 2) {
+				currentSolution = currentSolution.swap(
+					selectedMarkers[0].name,
+					selectedMarkers[1].name)
+				updateUI();
+			};
+		});
+	})
 	$("#stop").click(stop);
+
 	// var ctx = document.getElementById("chart").getContext("2d");
 	// chart = new Chart(ctx, {
 	// 	type: "line",
